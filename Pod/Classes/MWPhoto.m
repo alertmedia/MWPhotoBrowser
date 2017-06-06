@@ -6,9 +6,9 @@
 //  Copyright 2010 d3i. All rights reserved.
 //
 
-#import <WebImage/SDWebImageDecoder.h>
-#import <WebImage/SDWebImageManager.h>
-#import <WebImage/SDWebImageOperation.h>
+#import <SDWebImage/SDWebImageDecoder.h>
+#import <SDWebImage/SDWebImageManager.h>
+#import <SDWebImage/SDWebImageOperation.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "MWPhoto.h"
 #import "MWPhotoBrowser.h"
@@ -93,7 +93,21 @@
     if ((self = [super init])) {
         self.videoURL = url;
         self.isVideo = YES;
-        self.emptyImage = YES;
+        //self.emptyImage = YES;
+        AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url options:nil];
+        AVAssetImageGenerator* generator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
+        generator.appliesPreferredTrackTransform = YES;
+        [generator generateCGImagesAsynchronouslyForTimes:@[[NSValue valueWithCMTime:CMTimeMake(0, 1)]]
+                                        completionHandler:^(CMTime requestedTime, CGImageRef  _Nullable image, CMTime actualTime, AVAssetImageGeneratorResult result, NSError * _Nullable error) {
+                                            //__strong __typeof(weakSelf)strongSelf = weakSelf;
+                                            if (error) {
+                                                NSLog(@"Error loading video thumbnail for %@", url);
+                                                self.emptyImage = YES;
+                                            } else {
+                                                self.image = [UIImage imageWithCGImage:image];
+                                            }
+                                        }];
+
         [self setup];
     }
     return self;
